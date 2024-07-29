@@ -1,0 +1,27 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background: #00d4ff;
+ }
+
+#game {
+  width:100vh;
+  height:80vh;
+  border: solid 2px white;
+  background-color: white;
+  border-radius: 10px;
+  position: relative;
+}
+
+h1 {
+  color: white;
+  margin-right: 50px;
+}
+
+#logo {
+  height: 100px;
+  position: absolute;
+}
