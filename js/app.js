@@ -55,4 +55,39 @@ window.onload = () => {
   const fruit = new Fruit();
 
   setInterval(() => fruit.move(), 30);
+
+  class Bomb {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.img1 = document.getElementById('logo1');
+      this.div = document.getElementById('game');
+      this.init();
+    }
+
+    init() {
+      this.img1.onclick = () => {
+        player.resetScore();
+        this.resetPosition();
+      };
+      this.resetPosition();
+    }
+
+    resetPosition() {
+      this.img1.style.left = `${Math.floor(Math.random() * (this.div.clientWidth - this.img1.width))}px`;
+      this.img1.style.bottom = '570px';
+    }
+
+    move() {
+      let currentBottom = parseInt(this.img1.style.bottom, 10) || 0;
+      this.img1.style.bottom = `${currentBottom - 4}px`;
+
+      if (currentBottom <= 0) {
+        this.resetPosition();
+      }
+    }
+  }
+  const bomb = new Bomb();
+
+  setInterval(() => bomb.move(), 30);
 };
