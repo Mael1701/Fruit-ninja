@@ -108,11 +108,20 @@ window.onload = () => {
     const objects = [];
     for (let i = 0; i < count; i++) {
       const imgSrc = type === 'fruit' ? './assets/img/banane.jpg' : './assets/img/bomb.png';
-      const speed = type === 'fruit' ? 1 : 2;
+      const speed = type === 'fruit' ? 1 : 1.5;
       const object = type === 'fruit' ? new Fruit(imgSrc, 'game', speed) : new Bomb(imgSrc, 'game', speed);
       objects.push(object);
     }
     return objects;
+  }
+
+  function createBombsWithDelay(count, delay) {
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const bomb = new Bomb('./assets/img/bomb.png', 'game', 1.5);
+        bombs.push(bomb);
+      }, i * delay);
+    }
   }
 
   function showModal(modal) {
@@ -129,7 +138,7 @@ window.onload = () => {
     gameInterval = setInterval(() => {
       fruits.forEach(fruit => fruit.move());
       bombs.forEach(bomb => bomb.move());
-    }, 21);
+    }, 30);
   }
 
   retryFruitButton.onclick = () => {
@@ -142,9 +151,10 @@ window.onload = () => {
     resetGame();
   };
 
-  // Create multiple fruits and bombs
-  fruits.push(...createGameObjects(5, 'fruit'));
-  bombs.push(...createGameObjects(5, 'bomb'));
+  // Create multiple fruits
+  fruits.push(...createGameObjects(5, 'fruit')); // Adjust the number to add more fruits
+  // Create multiple bombs with delay
+  createBombsWithDelay(6, 1000); // Adjust the number to add more bombs and set delay in milliseconds
 
   resetGame();
 };

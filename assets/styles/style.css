@@ -7,8 +7,8 @@
   top: 50%;
   transform: translate(-50%, -50%);
   background-color: white;
-  width: 40vw;
-  height: 55vh;
+  width: 20vw;
+  height: 35vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,6 +35,8 @@ h1 {
   font-size: 2em;
   margin: 0;
 }
+
+
 
 p {
   color: white;
@@ -74,7 +76,7 @@ body {
   align-items: center;
   height: 100vh;
   margin: 0;
-  background: linear-gradient(135deg, #00d4ff, #0084ff);
+  background: url(../img/background.jpg);
 }
 
 #game {
@@ -87,10 +89,7 @@ body {
   position: relative;
 }
 
-h1 {
-  color: #333;
-  margin: 20px;
-}
+
 
 img.fruit, img.bomb {
   height: 60px;
