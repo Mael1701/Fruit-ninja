@@ -6,11 +6,21 @@ window.onload = () => {
   const retryBombButton = document.getElementById('retry-bomb');
   const scoreFruitElement = document.getElementById('score-fruit');
   const scoreBombElement = document.getElementById('score-bomb');
+  const gameDiv = document.getElementById('game');
+  const trailCanvas = document.createElement('canvas');
+  trailCanvas.id = 'trail';
+  gameDiv.appendChild(trailCanvas);
+  const ctx = trailCanvas.getContext('2d');
+  trailCanvas.width = gameDiv.clientWidth;
+  trailCanvas.height = gameDiv.clientHeight;
 
   let gameInterval;
   let isGameOver = false;
+  let isDragging = false;
   const fruits = [];
   const bombs = [];
+  const mouseTrail = [];
+  let ignoreNextPoint = false;
 
   class Player {
     constructor() {
@@ -64,17 +74,33 @@ window.onload = () => {
         }
       }
     }
+
+    checkCollision(trail) {
+      const rect = this.img.getBoundingClientRect();
+      const gameRect = gameDiv.getBoundingClientRect();
+      return trail.some(point =>
+        point.x > rect.left - gameRect.left &&
+        point.x < rect.right - gameRect.left &&
+        point.y > rect.top - gameRect.top &&
+        point.y < rect.bottom - gameRect.top
+      );
+    }
+
+    isPointInside(point) {
+      const rect = this.img.getBoundingClientRect();
+      const gameRect = gameDiv.getBoundingClientRect();
+      return (
+        point.x > rect.left - gameRect.left &&
+        point.x < rect.right - gameRect.left &&
+        point.y > rect.top - gameRect.top &&
+        point.y < rect.bottom - gameRect.top
+      );
+    }
   }
 
   class Fruit extends GameObject {
     constructor(imgSrc, containerId, speed) {
       super(imgSrc, containerId, speed, 'fruit');
-      this.img.onclick = () => {
-        if (!isGameOver) {
-          player.incrementScore();
-          this.resetPosition();
-        }
-      };
     }
 
     move() {
@@ -86,21 +112,41 @@ window.onload = () => {
         }
       }
     }
+
+    checkCollision(trail) {
+      if (trail.length < 2) return false;
+      for (let i = 1; i < trail.length; i++) {
+        const dx = trail[i].x - trail[i - 1].x;
+        const dy = trail[i].y - trail[i - 1].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance >= 30 && super.checkCollision([trail[i], trail[i - 1]])) {
+          player.incrementScore();
+          this.resetPosition();
+          return true;
+        }
+      }
+      return false;
+    }
   }
 
   class Bomb extends GameObject {
     constructor(imgSrc, containerId, speed) {
       super(imgSrc, containerId, speed, 'bomb');
-      this.img.onclick = () => {
-        if (!isGameOver) {
-          scoreBombElement.innerHTML = player.getScore();
-          showModal(gameOverBombModal);
-        }
-      };
     }
 
-    move() {
-      super.move();
+    checkCollision(trail) {
+      if (trail.length < 2) return false;
+      for (let i = 1; i < trail.length; i++) {
+        const dx = trail[i].x - trail[i - 1].x;
+        const dy = trail[i].y - trail[i - 1].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance >= 30 && super.checkCollision([trail[i], trail[i - 1]])) {
+          scoreBombElement.innerHTML = player.getScore();
+          showModal(gameOverBombModal);
+          return true;
+        }
+      }
+      return false;
     }
   }
 
@@ -154,7 +200,68 @@ window.onload = () => {
   // Create multiple fruits
   fruits.push(...createGameObjects(5, 'fruit')); // Adjust the number to add more fruits
   // Create multiple bombs with delay
-  createBombsWithDelay(6, 1000); // Adjust the number to add more bombs and set delay in milliseconds
+  createBombsWithDelay(5, 1000); // Adjust the number to add more bombs and set delay in milliseconds
+
+  function drawTrail() {
+    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+    ctx.beginPath();
+    if (mouseTrail.length > 0) {
+      ctx.moveTo(mouseTrail[0].x, mouseTrail[0].y);
+      for (let i = 1; i < mouseTrail.length; i++) {
+        ctx.lineTo(mouseTrail[i].x, mouseTrail[i].y);
+      }
+    }
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+  }
+
+  function updateTrail(e) {
+    if (!isDragging) return;
+    const rect = gameDiv.getBoundingClientRect();
+    const currentPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (ignoreNextPoint) {
+      ignoreNextPoint = false;
+      return;
+    }
+    if (mouseTrail.length > 0) {
+      const lastPoint = mouseTrail[mouseTrail.length - 1];
+      const dx = currentPoint.x - lastPoint.x;
+      const dy = currentPoint.y - lastPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance >= 30) {
+        mouseTrail.push(currentPoint);
+      }
+    } else {
+      mouseTrail.push(currentPoint);
+    }
+    if (mouseTrail.length > 20) mouseTrail.shift();
+    drawTrail();
+    fruits.forEach(fruit => fruit.checkCollision(mouseTrail));
+    bombs.forEach(bomb => bomb.checkCollision(mouseTrail));
+  }
+
+  gameDiv.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    mouseTrail.length = 0;  // Clear the mouse trail
+    const clickPoint = { x: e.clientX, y: e.clientY };
+    ignoreNextPoint = fruits.some(fruit => fruit.isPointInside(clickPoint)) ||
+      bombs.some(bomb => bomb.isPointInside(clickPoint));
+  });
+
+  gameDiv.addEventListener('mouseup', () => {
+    isDragging = false;
+    mouseTrail.length = 0;
+    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+  });
+
+  gameDiv.addEventListener('mousemove', updateTrail);
+
+  gameDiv.addEventListener('mouseleave', () => {
+    isDragging = false;
+    mouseTrail.length = 0;
+    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+  });
 
   resetGame();
 };
