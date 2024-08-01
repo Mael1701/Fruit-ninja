@@ -7,18 +7,12 @@ window.onload = () => {
   const scoreFruitElement = document.getElementById('score-fruit');
   const scoreBombElement = document.getElementById('score-bomb');
   const gameDiv = document.getElementById('game');
-  const trailCanvas = document.createElement('canvas');
-  trailCanvas.id = 'trail';
-  gameDiv.appendChild(trailCanvas);
-  const ctx = trailCanvas.getContext('2d');
-  trailCanvas.width = gameDiv.clientWidth;
-  trailCanvas.height = gameDiv.clientHeight;
 
   let gameInterval;
   let isGameOver = false;
   let isDragging = false;
-  const fruits = [];
-  const bombs = [];
+  let fruits = [];
+  let bombs = [];
   const mouseTrail = [];
   let ignoreNextPoint = false;
 
@@ -119,7 +113,7 @@ window.onload = () => {
         const dx = trail[i].x - trail[i - 1].x;
         const dy = trail[i].y - trail[i - 1].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance >= 30 && super.checkCollision([trail[i], trail[i - 1]])) {
+        if (distance >= 10 && super.checkCollision([trail[i], trail[i - 1]])) {
           player.incrementScore();
           this.resetPosition();
           return true;
@@ -140,7 +134,7 @@ window.onload = () => {
         const dx = trail[i].x - trail[i - 1].x;
         const dy = trail[i].y - trail[i - 1].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance >= 30 && super.checkCollision([trail[i], trail[i - 1]])) {
+        if (distance >= 10 && super.checkCollision([trail[i], trail[i - 1]])) {
           scoreBombElement.innerHTML = player.getScore();
           showModal(gameOverBombModal);
           return true;
@@ -150,24 +144,22 @@ window.onload = () => {
     }
   }
 
-  function createGameObjects(count, type) {
+  function createGameObjectsWithDelay(count, delay, type) {
     const objects = [];
     for (let i = 0; i < count; i++) {
-      const imgSrc = type === 'fruit' ? './assets/img/banane.jpg' : './assets/img/bomb.png';
-      const speed = type === 'fruit' ? 1 : 1.5;
-      const object = type === 'fruit' ? new Fruit(imgSrc, 'game', speed) : new Bomb(imgSrc, 'game', speed);
-      objects.push(object);
-    }
-    return objects;
-  }
-
-  function createBombsWithDelay(count, delay) {
-    for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        const bomb = new Bomb('./assets/img/bomb.png', 'game', 1.5);
-        bombs.push(bomb);
+        const imgSrc = type === 'fruit' ? './assets/img/banane.jpg' : './assets/img/bomb.png';
+        const speed = type === 'fruit' ? 5 : 1.5;
+        const object = type === 'fruit' ? new Fruit(imgSrc, 'game', speed) : new Bomb(imgSrc, 'game', speed);
+        objects.push(object);
+        if (type === 'fruit') {
+          fruits.push(object);
+        } else {
+          bombs.push(object);
+        }
       }, i * delay);
     }
+    return objects;
   }
 
   function showModal(modal) {
@@ -176,7 +168,7 @@ window.onload = () => {
     modal.style.display = 'flex';
   }
 
-  function resetGame() {
+  function startGame() {
     isGameOver = false;
     player.resetScore();
     fruits.forEach(fruit => fruit.resetPosition());
@@ -187,33 +179,54 @@ window.onload = () => {
     }, 30);
   }
 
+  function restart() {
+    // Delete all bombs
+    bombs.forEach(bomb => bomb.img.remove());
+    bombs = [];
+
+    // Generate new bombs
+    createGameObjectsWithDelay(8, 1000, 'bomb');
+
+    // Reset position of all fruits
+    fruits.forEach(fruit => fruit.resetPosition());
+  }
+
   retryFruitButton.onclick = () => {
     gameOverFruitModal.style.display = 'none';
-    resetGame();
+    restart();
+    startGame();
   };
 
   retryBombButton.onclick = () => {
     gameOverBombModal.style.display = 'none';
-    resetGame();
+    restart();
+    startGame();
   };
 
-  // Create multiple fruits
-  fruits.push(...createGameObjects(5, 'fruit')); // Adjust the number to add more fruits
-  // Create multiple bombs with delay
-  createBombsWithDelay(5, 1000); // Adjust the number to add more bombs and set delay in milliseconds
+  // Create multiple fruits and bombs with delay
+  createGameObjectsWithDelay(8, 300, 'fruit'); // Create fruits once
+  createGameObjectsWithDelay(8, 1000, 'bomb'); // Adjust the number and delay as needed
 
   function drawTrail() {
-    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
-    ctx.beginPath();
-    if (mouseTrail.length > 0) {
-      ctx.moveTo(mouseTrail[0].x, mouseTrail[0].y);
-      for (let i = 1; i < mouseTrail.length; i++) {
-        ctx.lineTo(mouseTrail[i].x, mouseTrail[i].y);
-      }
-    }
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-    ctx.lineWidth = 5;
-    ctx.stroke();
+    const trailContainer = document.createElement('div');
+    trailContainer.className = 'trail-container';
+    gameDiv.appendChild(trailContainer);
+
+    mouseTrail.forEach((point, index) => {
+      if (index === 0) return; // Skip the first point
+      const previousPoint = mouseTrail[index - 1];
+      const trailSegment = document.createElement('div');
+      trailSegment.className = 'trail-segment';
+      trailSegment.style.left = `${previousPoint.x}px`;
+      trailSegment.style.top = `${previousPoint.y}px`;
+      trailSegment.style.width = `${Math.sqrt((point.x - previousPoint.x) ** 2 + (point.y - previousPoint.y) ** 2)}px`;
+      trailSegment.style.transform = `rotate(${Math.atan2(point.y - previousPoint.y, point.x - previousPoint.x)}rad)`;
+      trailContainer.appendChild(trailSegment);
+
+      setTimeout(() => {
+        trailSegment.remove();
+      }, 1000); // Adjust the duration of the trail segments
+    });
   }
 
   function updateTrail(e) {
@@ -229,7 +242,7 @@ window.onload = () => {
       const dx = currentPoint.x - lastPoint.x;
       const dy = currentPoint.y - lastPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance >= 30) {
+      if (distance >= 10) {
         mouseTrail.push(currentPoint);
       }
     } else {
@@ -252,7 +265,7 @@ window.onload = () => {
   gameDiv.addEventListener('mouseup', () => {
     isDragging = false;
     mouseTrail.length = 0;
-    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+    gameDiv.querySelectorAll('.trail-container').forEach(container => container.remove());
   });
 
   gameDiv.addEventListener('mousemove', updateTrail);
@@ -260,8 +273,8 @@ window.onload = () => {
   gameDiv.addEventListener('mouseleave', () => {
     isDragging = false;
     mouseTrail.length = 0;
-    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+    gameDiv.querySelectorAll('.trail-container').forEach(container => container.remove());
   });
 
-  resetGame();
+  startGame();
 };
