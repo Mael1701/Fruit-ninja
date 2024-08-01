@@ -108,7 +108,7 @@ window.onload = () => {
     const objects = [];
     for (let i = 0; i < count; i++) {
       const imgSrc = type === 'fruit' ? './assets/img/banane.jpg' : './assets/img/bomb.png';
-      const speed = type === 'fruit' ? 1 : 1.5;
+      const speed = type === 'fruit' ? 1 : 2;
       const object = type === 'fruit' ? new Fruit(imgSrc, 'game', speed) : new Bomb(imgSrc, 'game', speed);
       objects.push(object);
     }
@@ -129,7 +129,7 @@ window.onload = () => {
     gameInterval = setInterval(() => {
       fruits.forEach(fruit => fruit.move());
       bombs.forEach(bomb => bomb.move());
-    }, 30);
+    }, 21);
   }
 
   retryFruitButton.onclick = () => {

@@ -21,7 +21,7 @@
 }
 
 #gameoverfruit {
-  background-color: #ff6f61; 
+  background-color: #ff6f61;
   animation: slide-in .5s ease-out forwards;
 }
 
@@ -43,9 +43,9 @@ p {
 }
 
 a {
-  color: white;
+  color: black;
   font-size: 1.2em;
-  background-color: #333;
+  background-color: white;
   padding: 10px 20px;
   text-decoration: none;
   border-radius: 10px;
@@ -53,7 +53,7 @@ a {
 }
 
 a:hover {
-  background-color: #555;
+  background-color: #ff4c79;
 }
 
 /* Keyframes for modal animation */
