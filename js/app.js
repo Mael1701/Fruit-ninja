@@ -15,6 +15,7 @@ window.onload = () => {
   let bombs = [];
   const mouseTrail = [];
   let ignoreNextPoint = false;
+  const timeouts = [];
 
   class Player {
     constructor() {
@@ -147,7 +148,7 @@ window.onload = () => {
   function createGameObjectsWithDelay(count, delay, type) {
     const objects = [];
     for (let i = 0; i < count; i++) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const imgSrc = type === 'fruit' ? './assets/img/banane.jpg' : './assets/img/bomb.png';
         const speed = type === 'fruit' ? 5 : 1.5;
         const object = type === 'fruit' ? new Fruit(imgSrc, 'game', speed) : new Bomb(imgSrc, 'game', speed);
@@ -158,13 +159,16 @@ window.onload = () => {
           bombs.push(object);
         }
       }, i * delay);
+      timeouts.push(timeoutId);
     }
     return objects;
   }
 
   function showModal(modal) {
     isGameOver = true;
+    isDragging = false; // Stop dragging when game over
     clearInterval(gameInterval);
+    timeouts.forEach(timeoutId => clearTimeout(timeoutId));
     modal.style.display = 'flex';
   }
 
@@ -204,8 +208,8 @@ window.onload = () => {
   };
 
   // Create multiple fruits and bombs with delay
-  createGameObjectsWithDelay(8, 300, 'fruit'); // Create fruits once
-  createGameObjectsWithDelay(8, 1000, 'bomb'); // Adjust the number and delay as needed
+  createGameObjectsWithDelay(8, 300, 'fruit');
+  createGameObjectsWithDelay(8, 1000, 'bomb');
 
   function drawTrail() {
     const trailContainer = document.createElement('div');
@@ -213,7 +217,7 @@ window.onload = () => {
     gameDiv.appendChild(trailContainer);
 
     mouseTrail.forEach((point, index) => {
-      if (index === 0) return; // Skip the first point
+      if (index === 0) return;
       const previousPoint = mouseTrail[index - 1];
       const trailSegment = document.createElement('div');
       trailSegment.className = 'trail-segment';
@@ -225,12 +229,12 @@ window.onload = () => {
 
       setTimeout(() => {
         trailSegment.remove();
-      }, 1000); // Adjust the duration of the trail segments
+      }, 1000);
     });
   }
 
   function updateTrail(e) {
-    if (!isDragging) return;
+    if (!isDragging || isGameOver) return;
     const rect = gameDiv.getBoundingClientRect();
     const currentPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     if (ignoreNextPoint) {
@@ -255,8 +259,9 @@ window.onload = () => {
   }
 
   gameDiv.addEventListener('mousedown', (e) => {
+    if (isGameOver) return;
     isDragging = true;
-    mouseTrail.length = 0;  // Clear the mouse trail
+    mouseTrail.length = 0;
     const clickPoint = { x: e.clientX, y: e.clientY };
     ignoreNextPoint = fruits.some(fruit => fruit.isPointInside(clickPoint)) ||
       bombs.some(bomb => bomb.isPointInside(clickPoint));
